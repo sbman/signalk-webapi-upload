@@ -67,9 +67,7 @@ module.exports = function (app) {
                   "accept": "*/*",
                   "content-type" : "application/json"
                 },
-                body: outputText
-                //Use Fiddler proxy
-                ,proxy: "http://127.0.0.1:8888"
+                body: outputText               
               };
               //Add the custom headers
               if(options.httpHeaders) {           
