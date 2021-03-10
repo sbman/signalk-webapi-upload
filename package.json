@@ -1,0 +1,17 @@
+{
+  "name": "signalk-webapi-upload",
+  "version": "1.0.0",
+  "description": "WebApi data uploader",
+  "main": "index.js",
+  "scripts": {
+    "test": "$NODE $npm_package_main"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.83.0",
+    "handlebars": "^4.7.0",
+    "convert-units": "^2.3.4"
+  },
+  "keywords":["signalk-node-server-plugin"]
+}
