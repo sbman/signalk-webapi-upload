@@ -17,7 +17,11 @@ module.exports = function (app) {
 
     //Handlebars helper to assist in flattening data if necessary for the output JSON
     handlebars.registerHelper("getValueByName", function(value1, value2) {
-      return (value1.find((x) => x.name === value2) ?? { value: "" }).value;
+      //Modified to support older ECMASCRIPT installs
+      if(value1.find((x) => x.name === value2))
+        return returnValue.value;
+      else
+        return { value: "" };
     });
 
     plugin.start = function (options) {

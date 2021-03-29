@@ -9,9 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "request": "^2.83.0",
+    "convert-units": "^2.3.4",
     "handlebars": "^4.7.0",
-    "convert-units": "^2.3.4"
+    "request": "^2.83.0"
   },
-  "keywords":["signalk-node-server-plugin"]
+  "keywords": [
+    "signalk-node-server-plugin"
+  ]
 }
