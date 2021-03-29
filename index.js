@@ -10,6 +10,7 @@ module.exports = function (app) {
     let hbTemplate;
     let count = 0;
     let validTypes = ["boolean", "number", "bigint", "string"];
+    let timeoutHandler = null;
 
     plugin.id = "signalk-webapi-upload";
     plugin.name = "WebAPI data upload";
@@ -28,85 +29,76 @@ module.exports = function (app) {
         if (options.handlebarsTemplate) {
           hbTemplate = handlebars.compile(options.handlebarsTemplate);
         }
-
-        let stream = app.streambundle.getSelfStream("navigation.datetime");
-        //Subscribe to time
-        if (options && options.interval > 0) {
-          stream = stream.debounceImmediate(options.interval * 1000);
-        } else {
-          stream = stream.take(1);
-        }
-
-        // Insert the handler function for stream events into the unsubscribe array
-        // so it will be unsubscribed on stop
-        plugin.unsubscribes.push(
-          stream.onValue(function (datetime) {
-            let data = { path: [] };
-            options.paths.forEach((pathobj) => {
-                app.debug(pathobj.path);
-                let val = app.getSelfPath(pathobj.path);
-                if(val) {
-                  //Only allow valid types
-                  if(validTypes.indexOf(typeof(val)) != -1) {
-                    if(pathobj.conversionFrom && pathobj.conversionTo) {
-                      val = units(val).from(pathobj.conversionFrom).to(pathobj.conversionTo);
-                    }
+        timeoutHandler = setInterval(function () {
+          let data = { path: [] };
+          options.paths.forEach((pathobj) => {
+              app.debug(pathobj.path);
+              let val = app.getSelfPath(pathobj.path);
+              if(val) {
+                //Only allow valid types
+                if(validTypes.indexOf(typeof(val)) != -1) {
+                  app.debug("Valid Type.");
+                  if(pathobj.conversionFrom && pathobj.conversionTo) {                    
+                    val = units(val).from(pathobj.conversionFrom).to(pathobj.conversionTo);
                   } else {
-                    val = "";
+                    val = val;
                   }
-                  let item = { name: pathobj.name, value: val };
-                  data.path.push(item);
-                }
-              }
-            );
-
-            let outputText = hbTemplate(data);
-            app.debug("Template output: " + outputText);
-            if (data.path.length > 0) {
-              //Ready to upload data
-              let uploadOptions = {
-                url: options.url,
-                method: "post",
-                headers: {
-                  "accept": "*/*",
-                  "content-type" : "application/json"
-                },
-                body: outputText               
-              };
-              //Add the custom headers
-              if(options.httpHeaders) {           
-                options.httpHeaders.forEach(h => {
-                  uploadOptions.headers[h.headerName] = h.headerValue;
-                });
-              }
-              app.debug("Headers: " + JSON.stringify(uploadOptions.headers));
-              app.debug("Posting to: " + uploadOptions.url);
-              request(uploadOptions, function (err, res, body) {
-                if(res) {
-                  app.debug("Result:" + res.statusCode + " M: " + res.statusMessage);
-                  if(res.statusMessage !== 200) {
-                    app.debug("Server returned: " + body);
-                  }
-                }
-                else {
-                  app.debug("No Result from webapi post");
-                }
-                if(err) {
-                  app.debug("WebAPI Error: " + err.title + " Desc:" + err.description);
-                  app.debug("Server returned: " + body);
                 } else {
-                  app.debug("No error");
+                  app.debug("Invalid Type.");
+                  app.debug("Value: "+ val.toString());
+                  val = "";
                 }
+                let item = { name: pathobj.name, value: val };
+                data.path.push(item);
+              }
+            }
+          );
+
+          let outputText = hbTemplate(data);
+          app.debug("Template output: " + outputText);
+          if (data.path.length > 0) {
+            //Ready to upload data
+            let uploadOptions = {
+              url: options.url,
+              method: "post",
+              headers: {
+                "accept": "*/*",
+                "content-type" : "application/json"
+              },
+              body: outputText               
+            };
+            //Add the custom headers
+            if(options.httpHeaders) {           
+              options.httpHeaders.forEach(h => {
+                uploadOptions.headers[h.headerName] = h.headerValue;
               });
             }
-            app.debug("Interval reached,value passed: " + datetime.toString());
-          })
-        );
+            app.debug("Headers: " + JSON.stringify(uploadOptions.headers));
+            app.debug("Posting to: " + uploadOptions.url);
+            request(uploadOptions, function (err, res, body) {
+              if(res) {
+                app.debug("Result:" + res.statusCode + " M: " + res.statusMessage);
+                if(res.statusMessage !== 200) {
+                  app.debug("Server returned: " + body);
+                }
+              }
+              else {
+                app.debug("No Result from webapi post");
+              }
+              if(err) {
+                app.debug("WebAPI Error: " + err.title + " Desc:" + err.description);
+                app.debug("Server returned: " + body);
+              } else {
+                app.debug("No error");
+              }
+            });
+          }
+          app.debug("Interval reached,value passed.");
+        }, options.interval * 1000);
     };
 
     plugin.stop = function () {
-        plugin.unsubscribes.forEach((f) => f());
-        plugin.unsubscribes = [];
+        clearInterval(timeoutHandler);
         // Here we put logic we need when the plugin stops
         app.debug("Plugin stopped");
     };
