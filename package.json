@@ -6,7 +6,12 @@
   "scripts": {
     "test": "$NODE $npm_package_main"
   },
-  "author": "",
+  "author": "Scott Winn",
+  "homepage": "https://github.com/sbman/signalk-webapi-upload#readme",
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/sbman/signalk-webapi-upload.git"
+  },
   "license": "ISC",
   "dependencies": {
     "convert-units": "^2.3.4",
